@@ -1,0 +1,101 @@
+/* src/components/Dashboard.css */
+
+.dashboard {
+  display: flex;
+  flex-direction: row;
+  width: 100%; 
+
+.left-section, .right-section {
+  flex: 1; 
+  margin: 0 10px;
+}
+  
+h2, h3, h4 {
+    margin: 10px 0;
+    color: black; 
+  }
+  
+  .compute-performance, .cpu-forecasting, .overall-cluster-performance {
+    margin-bottom: 20px;
+  }
+  
+  .performance-metrics {
+    display: flex;
+    justify-content: space-between;
+    padding: 20px;
+    border-radius: 8px;
+  }
+  
+  .metric-item {
+    flex: 1;
+  }
+  
+  .utilization-metrics {
+    display: flex;
+    justify-content: space-between;
+  }
+  
+  .metric-block {
+    padding: 10px;
+    border-radius: 8px;
+    text-align: center;
+    margin-bottom: 20px;
+  }
+  
+  .donut-chart {
+    width: 100px;
+    height: 100px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: black; 
+  }
+  
+  .forecasting-chart {
+    padding: 20px;
+    border-radius: 8px;
+    height: 200px;
+  }
+  
+  .cluster-metrics {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-bottom: 20px;
+  }
+  
+  .metric-card {
+    flex: 1 1 calc(50% - 10px); 
+    box-sizing: border-box;
+  }
+
+  .utilization-charts {
+    display: flex;
+    justify-content: space-between; 
+    margin-top: 20px;
+  }
+  
+  .chart {
+    flex: 1;
+    text-align: center; 
+  }
+  
+  .donut-chart {
+    width: 100px;
+    height: 100px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: black; 
+    margin: 0 auto; 
+  }
+
+  .chart {
+    flex: 1;
+    text-align: center;
+    margin-left: 10px;
+    margin-right: 10px;
+  }
+}

@@ -1,0 +1,52 @@
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Dependency directories
+node_modules/
+
+# Environment variables
+.env
+
+# Build output
+build/
+dist/
+
+# Webpack output
+.cache/
+*.cache
+
+# Coverage directory used by testing tools like Jest
+coverage/
+
+# IDEs and editors
+.vscode/
+.idea/
+*.sublime-workspace
+
+# Miscellaneous
+.DS_Store
+Thumbs.db
+
+# Temporary files
+tmp/
+temp/
+
+# Debugger files
+*.pid
+*.seed
+
+# OS-specific files
+*.swp
+*.swo
+*.tmp
+
+# Ignore all bin and obj directories in the project
+**/bin/
+**/obj/
+
+# Ignore subfolders starting with an underscore
+_*/
