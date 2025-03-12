@@ -1,0 +1,18 @@
+serviceAccount:
+  create: true
+  name: cluster-polling  
+
+cronjob:
+  schedule: "*/1 * * * *"  
+
+image:
+  repository: ghcr.io/vincentdevopsresearch/clusterpolling
+  tag: latest
+
+env:
+  MONITORING_DB_CONNECTION_STRING: 
+    secretName: monitoring-db-connection-secret
+    secretKey: MONITORING_DB_CONNECTION_STRING
+
+imagePullSecrets:
+  - name: ghcr-secret

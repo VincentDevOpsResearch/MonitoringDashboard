@@ -1,0 +1,25 @@
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: clusterpolling
+spec:
+  schedule: "{{ .Values.cronjob.schedule }}"
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          serviceAccount: "{{ .Values.serviceAccount.name }}"
+          containers:
+            - name: clusterpolling
+              image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+              env:
+                - name: MONITORING_DB_CONNECTION_STRING
+                  valueFrom:
+                    secretKeyRef:
+                      name: "{{ .Values.env.MONITORING_DB_CONNECTION_STRING.secretName }}"
+                      key: "{{ .Values.env.MONITORING_DB_CONNECTION_STRING.secretKey }}"
+          restartPolicy: OnFailure
+          imagePullSecrets:
+            {{- if .Values.imagePullSecrets }}
+            {{- toYaml .Values.imagePullSecrets | nindent 12 }}
+            {{- end }}

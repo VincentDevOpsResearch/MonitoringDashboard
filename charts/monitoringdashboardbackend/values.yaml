@@ -1,0 +1,35 @@
+replicaCount: 1
+
+image:
+  repository: ghcr.io/vincentdevopsresearch/monitoringdashboardbackend
+  tag: latest
+  pullPolicy: Always
+
+service:
+  type: ClusterIP
+  ports:
+    http:
+      port: 7115
+      targetPort: 7115
+    metrics:
+      port: 5292
+      targetPort: 5292
+
+serviceAccount:
+  create: true
+  name: itppbackend-sa
+
+env:
+  ASPNETCORE_ENVIRONMENT: Development
+
+resources:
+  requests:
+    memory: "128Mi"
+    cpu: "100m"
+  limits:
+    memory: "256Mi"
+    cpu: "500m"
+
+imagePullSecrets:
+  - name: ghcr-secret
+

@@ -1,0 +1,30 @@
+replicaCount: 1
+
+image:
+  repository: prom/prometheus
+  tag: latest
+  pullPolicy: Always
+
+service:
+  type: ClusterIP
+  port: 9090
+
+nginxExporter:
+  enabled: true
+  targets:
+    - 'nginx-service:9113'
+
+apiExporter:
+  enabled: true
+  targets:
+    - 'itppbackend-service:5036'
+
+rabbitmqExporter:
+  enabled: false
+  targets:
+    - '<rabbitmq-metrics-ip>:<port>'
+
+resources: {}
+nodeSelector: {}
+tolerations: []
+affinity: {}

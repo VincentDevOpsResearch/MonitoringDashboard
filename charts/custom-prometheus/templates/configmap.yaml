@@ -1,0 +1,39 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ .Release.Name }}-prometheus-config
+  labels:
+    app: {{ .Chart.Name }}
+data:
+  prometheus.yml: |
+    global:
+      scrape_interval: 15s
+      evaluation_interval: 15s
+
+    scrape_configs:
+    {{- if .Values.nginxExporter.enabled }}
+      - job_name: 'nginx-metrics'
+        static_configs:
+          - targets:
+            {{- range .Values.nginxExporter.targets }}
+              - '{{ . }}'
+            {{- end }}
+    {{- end }}
+
+    {{- if .Values.apiExporter.enabled }}
+      - job_name: 'api-metrics'
+        static_configs:
+          - targets:
+            {{- range .Values.apiExporter.targets }}
+              - '{{ . }}'
+            {{- end }}
+    {{- end }}
+
+    {{- if .Values.rabbitmqExporter.enabled }}
+      - job_name: 'rabbitmq-metrics'
+        static_configs:
+          - targets:
+            {{- range .Values.rabbitmqExporter.targets }}
+              - '{{ . }}'
+            {{- end }}
+    {{- end }}

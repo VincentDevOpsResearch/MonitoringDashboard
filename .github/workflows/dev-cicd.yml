@@ -1,0 +1,334 @@
+name: Dev CI CD pipeline
+
+on:
+  push:
+    branches:
+      - 'feature/*'
+      - 'bug/*'
+
+jobs:
+  determine_runner:
+    name: Determine the Runner
+    runs-on: ubuntu-latest
+    outputs:
+      runner_label: ${{ steps.set_runner.outputs.runner_label }}
+
+    steps:
+      - name: Determine Runner from Actor
+        id: set_runner
+        run: |
+          RUNNER_LABEL="default-runner"
+
+          ACTOR="${{ github.actor }}"
+          echo "Triggered by actor: $ACTOR"
+
+          if [ -f .github/runner-mapping.json ]; then
+            RUNNER_LABEL=$(jq -r --arg ACTOR "$ACTOR" '.[$ACTOR] // "default-runner"' .github/runner-mapping.json)
+          else
+            echo "Runner mapping configuration file not found. Using default."
+          fi
+
+          echo "Assigned Runner Label: $RUNNER_LABEL"
+          echo "::set-output name=runner_label::$RUNNER_LABEL"
+
+  checkout_code:
+    name: Checkout Repository Code
+    needs: determine_runner
+    runs-on: ${{ needs.determine_runner.outputs.runner_label }}
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v2
+        with:
+          ref: ${{ github.head_ref }}  
+          fetch-depth: 0
+
+  check_code_changes:
+    name: Check Code Changes
+    needs: [determine_runner, checkout_code]
+    runs-on: ${{ needs.determine_runner.outputs.runner_label }}
+    outputs:
+      backend_changed: ${{ steps.check.outputs.backend_changed }}
+      ui_changed: ${{ steps.check.outputs.ui_changed }}
+      emailservice_changed: ${{ steps.check.outputs.emailservice_changed }}
+      monitoring_changed: ${{steps.check.outputs.monitoring_changed}}
+      dashboardui_changed: ${{steps.check.outputs.dashboardui_changed}}
+
+    steps:
+      - name: Check for relevant updates
+        id: check
+        run: |
+          $BACKEND_CHANGED = $false
+          $UI_CHANGED = $false
+          $EMAILSERVICE_CHANGED = $false
+          $MONITORING_CHANGED = $false
+          $DASHBOARDUI_CHANGED = $false
+
+          #  Check ITPPBackend Code
+          if (git rev-parse --verify HEAD~1 2>$null) {
+            if (git diff --name-only HEAD~1 HEAD | Select-String '^ITPPBackend/') {
+              $BACKEND_CHANGED = $true
+            }
+          } else {
+            if (git ls-files --others --exclude-standard | Select-String '^ITPPBackend/') {
+              $BACKEND_CHANGED = $true
+            }
+          }
+
+          # Check ITPPUI code
+          if (git rev-parse --verify HEAD~1 2>$null) {
+            if (git diff --name-only HEAD~1 HEAD | Select-String '^ITPPUI/') {
+              $UI_CHANGED = $true
+            }
+          } else {
+            if (git ls-files --others --exclude-standard | Select-String '^ITPPUI/') {
+              $UI_CHANGED = $true
+            }
+          }
+
+          # Check EmailNotificationService Code
+          if (git rev-parse --verify HEAD~1 2>$null) {
+            if (git diff --name-only HEAD~1 HEAD | Select-String '^EmailNotificationService/') {
+              $EMAILSERVICE_CHANGED = $true
+            }
+          } else {
+            if (git ls-files --others --exclude-standard | Select-String '^EmailNotificationService/') {
+              $EMAILSERVICE_CHANGED = $true
+            }
+          }
+
+          if (git rev-parse --verify HEAD~1 2>$null) {
+            if (git diff --name-only HEAD~1 HEAD | Select-String '^MonitoringDashboardBackend/') {
+              $MONITORING_CHANGED = $true
+            }
+          } else {
+            if (git ls-files --others --exclude-standard | Select-String '^MonitoringDashboardBackend/') {
+              $MONITORING_CHANGED = $true
+            }
+          }
+
+          if (git rev-parse --verify HEAD~1 2>$null) {
+            if (git diff --name-only HEAD~1 HEAD | Select-String '^MonitoringDashboardUI/') {
+              $DASHBOARDUI_CHANGED = $true
+            }
+          } else {
+            if (git ls-files --others --exclude-standard | Select-String '^MonitoringDashboardUI/') {
+              $DASHBOARDUI_CHANGED = $true
+            }
+          }
+
+          echo "Backend Changed: $BACKEND_CHANGED"
+          echo "UI Changed: $UI_CHANGED"
+          echo "Email Service Changed: $EMAILSERVICE_CHANGED"
+          echo "::set-output name=backend_changed::$BACKEND_CHANGED"
+          echo "::set-output name=ui_changed::$UI_CHANGED"
+          echo "::set-output name=emailservice_changed::$EMAILSERVICE_CHANGED"
+          echo "::set-output name=monitoring_changed::$MONITORING_CHANGED"
+          echo "::set-output name=dashboardui_changed::$DASHBOARDUI_CHANGED"
+
+  check_helm_changes:
+    name: Check Helm Updates
+    needs: [determine_runner, checkout_code]
+    runs-on: ${{ needs.determine_runner.outputs.runner_label }}
+    outputs:
+      helm_itppui_changed: ${{ steps.helm_check.outputs.helm_itppui_changed }}
+      helm_itppbackend_changed: ${{ steps.helm_check.outputs.helm_itppbackend_changed }}
+      helm_nginx_ingress_changed: ${{ steps.helm_check.outputs.helm_nginx_ingress_changed }}
+      helm_monitoring_changed: ${{ steps.helm_check.outputs.helm_monitoring_changed }}
+      helm_prometheus_changed: ${{ steps.helm_check.outputs.helm_prometheus_changed }}
+      helm_dashboardui_changed: ${{steps.helm_check.outputs.helm_dashboardui_changed}}
+    steps:
+      - name: Check Helm Changes
+        id: helm_check
+        run: |
+            $HELM_ITPPUI_CHANGED = $false
+            $HELM_ITPPBACKEND_CHANGED = $false
+            $HELM_NGINX_INGRESS_CHANGED = $false
+            $HELM_MONITORING_CHANGED = $false
+            $HELM_DASHBOARDUI_CHANGED = $false
+            $HELM_PROMETHEUS_CHANGED = $false
+  
+            if (git rev-parse --verify HEAD~1 2>$null) {
+              if (git diff --name-only HEAD~1 HEAD | Select-String '^Helm/itppui/') {
+                $HELM_ITPPUI_CHANGED = $true
+              }
+              if (git diff --name-only HEAD~1 HEAD | Select-String '^Helm/nginx-ingress/') {
+                $HELM_NGINX_INGRESS_CHANGED = $true
+              }
+              if (git diff --name-only HEAD~1 HEAD | Select-String '^Helm/nginx-ingress/') {
+                $HELM_NGINX_INGRESS_CHANGED = $true
+              }
+              if (git diff --name-only HEAD~1 HEAD | Select-String '^Helm/monitoringdashboardbackend/') {
+                $HELM_MONITORING_CHANGED = $true
+              }
+              if (git diff --name-only HEAD~1 HEAD | Select-String '^Helm/monitoringdashboardui/') {
+                $HELM_DASHBOARDUI_CHANGED = $true
+              }
+              if (git diff --name-only HEAD~1 HEAD | Select-String '^Helm/custom-prometheus/') {
+                $HELM_PROMETHEUS_CHANGED = $true
+              }
+            } else {
+              if (git ls-files --others --exclude-standard | Select-String '^Helm/itppui/') {
+                $HELM_ITPPUI_CHANGED = $true
+              }
+              if (git ls-files --others --exclude-standard | Select-String '^Helm/itppbackend/') {
+                $HELM_ITPPBACKEND_CHANGED = $true
+              }
+              if (git ls-files --others --exclude-standard | Select-String '^Helm/nginx-ingress/') {
+                $HELM_NGINX_INGRESS_CHANGED = $true
+              }
+              if (git ls-files --others --exclude-standard | Select-String '^Helm/monitoringdashboardbackend/') {
+                $HELM_MONITORING_CHANGED = $true
+              }
+              if (git ls-files --others --exclude-standard | Select-String '^Helm/monitoringdashboardbackend/') {
+                $HELM_DASHBOARDUI_CHANGED  = $true
+              }
+              if (git ls-files --others --exclude-standard | Select-String '^Helm/custom-prometheus/') {
+                $HELM_PROMETHEUS_CHANGED = $true
+              }
+            }
+
+            echo "Helm ITPPUI Changed: $HELM_ITPPUI_CHANGED"
+            echo "Helm ITPPBackend Changed: $HELM_ITPPBACKEND_CHANGED"
+            echo "Helm Nginx-Ingress Changed: $HELM_NGINX_INGRESS_CHANGED"
+            echo "Helm Monitoring Changed: $HELM_MONITORING_CHANGED"
+            echo "Helm DashboardUI Changed: $HELM_DASHBOARDUI_CHANGED"
+            echo "Helm Promethues Changed: $HELM_PROMETHEUS_CHANGED"
+    
+            #//TODO: Replace Depricated Github Action grammar
+            #echo "helm_itppui_changed=$HELM_ITPPUI_CHANGED" >> $GITHUB_OUTPUT
+            #echo "helm_itppbackend_changed=$HELM_ITPPBACKEND_CHANGED" >> $GITHUB_OUTPUT
+            #echo "helm_nginx_ingress_changed=$HELM_NGINX_INGRESS_CHANGED" >> $GITHUB_OUTPUT
+            #echo "helm_monitoring_changed=$HELM_MONITORING_CHANGED" >> $GITHUB_OUTPUT
+
+            echo "::set-output name=helm_itppui_changed::$HELM_ITPPUI_CHANGED"
+            echo "::set-output name=helm_itppbackend_changed::$HELM_ITPPBACKEND_CHANGED"
+            echo "::set-output name=helm_nginx_ingress_changed::$HELM_NGINX_INGRESS_CHANGED"
+            echo "::set-output name=helm_monitoring_changed::$HELM_MONITORING_CHANGED"
+            echo "::set-output name=helm_dashboardui_changed::$HELM_DASHBOARDUI_CHANGED"
+            echo "::set-output name=helm_promtheus_changed::$HELM_PROMETHEUS_CHANGED"
+
+  build:
+    name: Build Images
+    needs: [determine_runner, check_code_changes]
+    runs-on: ${{ needs.determine_runner.outputs.runner_label }}
+
+    steps:
+      - name: Check Outputs
+        run: |
+          echo "Backend Changed: ${{ needs.check_code_changes.outputs.backend_changed}}"
+          echo "UI Changed: ${{needs.check_code_changes.outputs.ui_changed}}"
+          echo "Email Service Changed: ${{needs.check_code_changes.outputs.ui_changed}}"
+          echo "Monitoring Changed: ${{needs.check_code_changes.outputs.monitoring_changed}}"
+          echo "dashboardUI Changed: ${{needs.check_code_changes.outputs.monitoring_changed}}"
+          echo "Issue Rag: ${{github.sha}}"
+
+      - name: Build and push ITPPBackend Docker image
+        if: ${{ needs.check_code_changes.outputs.backend_changed == 'True' }}
+        run: |
+          cd ..
+          Write-Host "Current Directory: $(Get-Location)"
+          $REPO_NAME = "${{ github.repository}}".ToLower()
+          $TAG="ghcr.io/$REPO_NAME/itppbackend:${{github.sha}}"
+          echo "Generated Docker tag: $TAG"
+
+          docker build -f ./ITPPBackend/Dockerfile -t $TAG ./ITPPBackend
+          docker push $TAG
+
+      - name: Build and push ITPPUI Docker image
+        if: ${{ needs.check_code_changes.outputs.ui_changed == 'True' }}
+        run: |
+          cd ..
+          $REPO_NAME = "${{ github.repository}}".ToLower()
+          $TAG="ghcr.io/$REPO_NAME/itppui:${{github.sha}}"
+          echo "Generated Docker tag: $TAG"
+
+          docker build -f ./ITPPUI/Dockerfile `
+            --build-arg REACT_APP_API_URL=http://api.example.com:30080 `
+            -t $TAG ./ITPPUI
+          docker push $TAG
+      
+      - name: Build and push DashboardUI Docker image
+        if: ${{ needs.check_code_changes.outputs.dashboardui_changed == 'True' }}
+        run: |
+            cd ..
+            $REPO_NAME = "${{ github.repository}}".ToLower()
+            $TAG="ghcr.io/$REPO_NAME/itppui:${{github.sha}}"
+            echo "Generated Docker tag: $TAG"
+  
+            docker build -f ./MonitoringDashboardUI/Dockerfile `
+              --build-arg VITE_API_BASE_URL=http://monitoring.example.com:30080 `
+              -t $TAG ./MonitoringDashboardUI
+            docker push $TAG
+
+      - name: Build and push EmailNotificationService Docker image
+        if: ${{ needs.check_code_changes.outputs.emailservice_changed == 'True' }}
+        run: |
+          cd ..
+          $REPO_NAME = "${{ github.repository}}".ToLower()
+          $TAG="ghcr.io/$REPO_NAME/emailnotificationservice:${{github.sha}}"
+          echo "Generated Docker tag: $TAG"
+
+          docker build -f ./EmailNotificationService/Dockerfile -t $TAG ./EmailNotificationService
+          docker push $TAG
+
+      - name: Build and push MonitoringBackend Docker image
+        if: ${{ needs.check_code_changes.outputs.monitoring_changed == 'True' }}
+        run: |
+          cd ..
+          $REPO_NAME = "${{ github.repository}}".ToLower()
+          $TAG="ghcr.io/$REPO_NAME/monitoringdashboardbackend:${{github.sha}}"
+          echo "Generated Docker tag: $TAG"
+
+          docker build -f ./MonitoringDashboardBackend/Dockerfile -t $TAG ./MonitoringDashboardBackend
+          docker push $TAG
+
+  deploy:
+    name: Deploy Artifacts with Helm
+    needs: [determine_runner, check_code_changes, check_helm_changes, build]
+    runs-on: ${{ needs.determine_runner.outputs.runner_label }}
+
+    steps:
+      - name: Deploy ITPPBackend with Helm
+        if: ${{ needs.check_code_changes.outputs.backend_changed == 'True' || needs.check_helm_changes.outputs.helm_itppbackend_changed == 'True' }}
+        run: |
+          cd ..
+          helm upgrade --install itppbackend ./Helm/itppbackend --set image.tag=${{ github.sha }}
+
+      - name: Deploy ITPPUI with Helm
+        if: ${{ needs.check_code_changes.outputs.ui_changed == 'True' || needs.check_helm_changes.outputs.helm_itppui_changed == 'True' }}
+        run: |
+          cd ..
+          helm upgrade --install itppui ./Helm/itppui --set image.tag=${{ github.sha }}
+
+      - name: Deploy DASHBOARDUI with Helm
+        if: ${{ needs.check_code_changes.outputs.dashboardui_changed == 'True' || needs.check_helm_changes.outputs.helm_dashboardui_changed == 'True' }}
+        run: |
+          cd ..
+          helm uninstall dashboardui
+          helm upgrade --install dashboardui ./Helm/monitoringdashboardui --set image.tag=${{ github.sha }}
+
+      - name: Deploy Monitoring Dashboard Backend with Helm
+        if: ${{ needs.check_helm_changes.outputs.helm_monitoring_changed == 'True' || needs.check_code_changes.outputs.monitoring_changed == 'True' }}
+        run: |
+          cd ..
+          helm uninstall monitoring-dashboard-backend
+          helm upgrade --install monitoring-dashboard-backend ./Helm/monitoringdashboardbackend --set image.tag=${{ github.sha }}
+
+      - name: Deploy Nginx-Ingress with Helm
+        if: ${{ needs.check_helm_changes.outputs.helm_nginx_ingress_changed == 'True' }}
+        run: |
+          cd ..
+          helm uninstall nginx-ingress
+          helm upgrade --install nginx-ingress ./Helm/nginx-ingress `
+          -f  ./Helm/nginx-ingress/values-dev.yaml
+
+      - name: Deploy Prometheus with Helm
+        if: ${{ needs.check_helm_changes.outputs.helm_prometheus_changed == 'True' }}
+        run: |
+            cd ..
+            helm upgrade --install my-promtheus ./Helm/custom-promtheus 
+
+      
+
+
+  

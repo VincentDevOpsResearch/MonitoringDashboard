@@ -16,8 +16,8 @@ CREATE TABLE CpuForecasts (
     item_id NVARCHAR(50) NOT NULL,
     timestamp DATETIME NOT NULL,
     mean FLOAT NOT NULL,
-    percentile_10 FLOAT NOT NULL,
-    percentile_90 FLOAT NOT NULL,
+    lower_bound FLOAT NOT NULL,
+    upper_bound FLOAT NOT NULL,
     created_at DATETIME DEFAULT GETDATE()
 );
 GO
@@ -27,8 +27,8 @@ CREATE TABLE MemoryForecasts (
     item_id NVARCHAR(50) NOT NULL,
     timestamp DATETIME NOT NULL,
     mean FLOAT NOT NULL,
-    percentile_10 FLOAT NOT NULL,
-    percentile_90 FLOAT NOT NULL,
+    lower_bound FLOAT NOT NULL,
+    upper_bound FLOAT NOT NULL,
     created_at DATETIME DEFAULT GETDATE()
 );
 GO

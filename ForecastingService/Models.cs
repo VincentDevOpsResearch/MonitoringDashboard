@@ -27,10 +27,10 @@ namespace Forecasting
         
         [Column("mean")]
         public float Mean { get; set; }
-        [Column("percentile_10")]
+        [Column("lower_bound")]
         public float Percentile10 { get; set; }
         
-        [Column("percentile_90")]
+        [Column("upper_bound")]
         public float Percentile90 { get; set; }
 
         [Column("created_at")]
@@ -49,10 +49,10 @@ namespace Forecasting
         
         [Column("mean")]
         public float Mean { get; set; }
-        [Column("percentile_10")]
+        [Column("lower_bound")]
         public float Percentile10 { get; set; }
         
-        [Column("percentile_90")]
+        [Column("upper_bound")]
         public float Percentile90 { get; set; }
         [Column("created_at")]
         public DateTime CreatedAt { get; set; }

@@ -1,0 +1,89 @@
+name: Auto Branch Creation
+
+on:
+  issues:
+    types:
+      - opened
+      - edited
+
+permissions:
+  contents: write
+
+jobs:
+  check-branch:
+    runs-on: ubuntu-latest
+    outputs:
+      create_branch: ${{ steps.determine.outputs.create_branch }}
+      branch_type: ${{ steps.determine.outputs.branch_type }}
+      branch_name: ${{ steps.determine.outputs.branch_name }}
+    steps:
+      - name: Check out the repository (read-only)
+        uses: actions/checkout@v2
+
+      - name: Determine if branch needs to be created
+        id: determine
+        run: |
+          # Extract issue title and number
+          ISSUE_TITLE="${{ github.event.issue.title }}"
+          ISSUE_NUMBER="${{ github.event.issue.number }}"
+          echo "Issue Title: $ISSUE_TITLE"
+          echo "Issue Number: $ISSUE_NUMBER"
+
+          # Initialize outputs
+          CREATE_BRANCH="false"
+          BRANCH_TYPE=""
+          BRANCH_NAME=""
+
+          # Check title for keywords
+          if echo "$ISSUE_TITLE" | grep -iq "FEATURE"; then
+            BRANCH_TYPE="feature"
+            CREATE_BRANCH="true"
+          elif echo "$ISSUE_TITLE" | grep -iq "BUG"; then
+            BRANCH_TYPE="bug"
+            CREATE_BRANCH="true"
+          fi
+
+          # Generate branch name if creation is needed
+          if [ "$CREATE_BRANCH" = "true" ]; then
+            BRANCH_NAME="${BRANCH_TYPE}/issue-${ISSUE_NUMBER}"
+
+            # Check if branch already exists
+            echo "Checking if branch $BRANCH_NAME already exists..."
+            BRANCH_EXISTS=$(git ls-remote --heads origin "$BRANCH_NAME")
+
+            if [ -n "$BRANCH_EXISTS" ]; then
+              echo "Branch $BRANCH_NAME already exists."
+              CREATE_BRANCH="false" # Override to false if branch exists
+            else
+              echo "Branch $BRANCH_NAME does not exist. Proceeding to create."
+            fi
+          fi
+
+
+          # Output values
+          echo "::set-output name=create_branch::$CREATE_BRANCH"
+          echo "::set-output name=branch_type::$BRANCH_TYPE"
+          echo "::set-output name=branch_name::$BRANCH_NAME"
+        shell: bash
+
+  create-branch:
+    needs: check-branch
+    if: needs.check-branch.outputs.create_branch == 'true' # Only proceed if branch creation is needed
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out the repository
+        uses: actions/checkout@v2
+
+      - name: Create and Push Branch
+        run: |
+          # Get branch name from the previous step
+          BRANCH_NAME="${{ needs.check-branch.outputs.branch_name }}"
+          echo "Creating branch: $BRANCH_NAME"
+          
+          # Set up Git
+          git config --global user.name 'github-actions[bot]'
+          git config --global user.email 'github-actions[bot]@users.noreply.github.com'
+          
+          # Create and push the branch
+          git checkout -b "$BRANCH_NAME"
+          git push "https://${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git" "$BRANCH_NAME"

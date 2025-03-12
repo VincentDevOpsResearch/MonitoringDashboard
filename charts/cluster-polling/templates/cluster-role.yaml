@@ -1,0 +1,11 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: {{ .Release.Name }}-cluster-metrics-access
+rules:
+- apiGroups: [""]
+  resources: ["nodes", "pods"]
+  verbs: ["list", "get"]
+- apiGroups: ["metrics.k8s.io"]
+  resources: ["nodes", "pods"]
+  verbs: ["list", "get"]
