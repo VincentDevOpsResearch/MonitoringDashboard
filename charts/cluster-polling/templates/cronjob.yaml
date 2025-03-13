@@ -12,6 +12,7 @@ spec:
           containers:
             - name: clusterpolling
               image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+              imagePullPolicy: IfNotPresent
               env:
                 - name: MONITORING_DB_CONNECTION_STRING
                   valueFrom:

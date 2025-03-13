@@ -11,6 +11,8 @@ export const API_PERFORMANCE = "/statistics/api-performance";
 export const NODES_INFO = "/infrastructure/nodes/info";
 export const NODES_CPU_ACTUAL = "/infrastructure/nodes/cpu-actual";
 export const NODES_CPU_FORECAST = "/infrastructure/nodes/cpu-forecast";
+export const NODES_MEMORY_ACTUAL = "/infrastructure/nodes/memory-actual";
+export const NODES_MEMORY_FORECAST = "/infrastructure/nodes/memory-forecast";
 export const CLUSTER_STATUS = "/infrastructure/cluster/status";
 export const CLUSTER_UTILIZATION = "/infrastructure/cluster/utilization";
 

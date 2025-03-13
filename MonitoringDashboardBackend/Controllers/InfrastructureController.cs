@@ -34,9 +34,24 @@ namespace MonitoringDashboard.Controllers
 
         // Get All nodes cpu forecast
         [HttpGet("nodes/cpu-forecast")]
-        public async Task<IActionResult> GetAllNodeCpuForecast()
+        public async Task<IActionResult> GetCpuForecastForInstance(string instanceName)
         {
-            var cpuForecastList = await _infrastructureService.GetCpuForecastForAllNodesAsync();
+            var cpuForecastList = await _infrastructureService.GetCpuForecastForInstance(instanceName);
+            return Ok(cpuForecastList);
+        }
+
+        [HttpGet("nodes/memory-actual")]
+        public async Task<IActionResult> GetMemoryActualForInstance(string instanceName)
+        {
+            var cpuActualList = await _infrastructureService.GetMemoryActualForInstance(instanceName);
+            return Ok(cpuActualList);
+        }
+
+        // Get All nodes cpu forecast
+        [HttpGet("nodes/memory-forecast")]
+        public async Task<IActionResult> GetMemoryActualForecast(string instanceName)
+        {
+            var cpuForecastList = await _infrastructureService.GetMemoryForecastForInstance(instanceName);
             return Ok(cpuForecastList);
         }
 

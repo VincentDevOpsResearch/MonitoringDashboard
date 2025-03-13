@@ -3,7 +3,7 @@ replicaCount: 1
 image:
   repository: ghcr.io/vincentdevopsresearch/monitoringdashboardbackend
   tag: latest
-  pullPolicy: Always
+  pullPolicy: IfNotPresent
 
 service:
   type: ClusterIP
@@ -21,6 +21,9 @@ serviceAccount:
 
 env:
   ASPNETCORE_ENVIRONMENT: Development
+  MONITORING_DB_CONNECTION_STRING: 
+    secretName: monitoring-db-connection-secret
+    secretKey: MONITORING_DB_CONNECTION_STRING
 
 resources:
   requests:

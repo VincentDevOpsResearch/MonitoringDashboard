@@ -15,6 +15,7 @@ import {
   Legend,
 } from "chart.js";
 import { fetchData } from '../../api/requests';
+import PerformanceChart from "./PerformanceChart";
 import { NODES_INFO, NODES_CPU_ACTUAL } from '../../api/constants'
 
 ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend);
@@ -217,9 +218,7 @@ const ComputePerformance: React.FC = () => {
           />
         </div>
       </Box>
-      <Box width="100%" height="400px" mt={3}>
-        <Line data={chartData} options={options} />
-      </Box>
+      {selectedNode && <PerformanceChart nodeName={selectedNode.nodeName} />}
     </Paper>
   );
 };

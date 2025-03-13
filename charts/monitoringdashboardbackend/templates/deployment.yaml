@@ -26,8 +26,13 @@ spec:
         - containerPort: {{ .Values.service.ports.http.port }}
         - containerPort: {{ .Values.service.ports.metrics.port }}
         env:
-        - name: ASPNETCORE_ENVIRONMENT
-          value: {{ .Values.env.ASPNETCORE_ENVIRONMENT }}
+          - name: ASPNETCORE_ENVIRONMENT
+            value: {{ .Values.env.ASPNETCORE_ENVIRONMENT }}
+          - name: MONITORING_DB_CONNECTION_STRING
+            valueFrom:
+              secretKeyRef:
+                name: "{{ .Values.env.MONITORING_DB_CONNECTION_STRING.secretName }}"
+                key: "{{ .Values.env.MONITORING_DB_CONNECTION_STRING.secretKey }}"
         resources:
           requests:
             memory: {{ .Values.resources.requests.memory }}
