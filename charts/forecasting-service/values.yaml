@@ -1,0 +1,19 @@
+cronjob:
+  schedule: "*/5 * * * *"  
+
+image:
+  repository: ghcr.io/vincentdevopsresearch/forecastingservice
+  tag: latest
+
+env:
+  MONITORING_DB_CONNECTION_STRING: 
+    secretName: monitoring-db-connection-secret
+    secretKey: MONITORING_DB_CONNECTION_STRING
+
+  PREDICTION_API_URL:
+    secretName: prediction-api-url
+    secretKey: PREDICTION_API_URL
+
+
+imagePullSecrets:
+  - name: ghcr-secret

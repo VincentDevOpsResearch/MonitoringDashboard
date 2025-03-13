@@ -12,7 +12,7 @@ interface ApiPerformanceMetrics {
   errorRate: number;
   minResponseTime: number;
   maxResponseTime: number;
-  percentile90ResponseTime: number;
+  upperBoundResponseTime: number;
 }
 
 const MetricsTableSection: React.FC = () => {
@@ -37,7 +37,7 @@ const MetricsTableSection: React.FC = () => {
           avgRespTime: Math.round(item.avgResponseTime * 1000), // Convert to ms
           minRespTime: Math.round(item.minResponseTime * 1000),
           maxRespTime: Math.round(item.maxResponseTime * 1000),
-          '90thRespTime': Math.round(item.percentile90ResponseTime * 1000),
+          '90thRespTime': Math.round(item.upperBoundResponseTime * 1000),
           errorPercentage: parseFloat(item.errorRate.toFixed(2)), // Format error rate
         }));
 

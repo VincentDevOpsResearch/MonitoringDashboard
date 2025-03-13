@@ -38,6 +38,6 @@ namespace MonitoringDashboard.Models
     public double ErrorRate { get; set; }          
     public double MinResponseTime { get; set; }    
     public double MaxResponseTime { get; set; }   
-    public double Percentile90ResponseTime { get; set; } 
+    public double upperBoundResponseTime { get; set; } 
 }
 }

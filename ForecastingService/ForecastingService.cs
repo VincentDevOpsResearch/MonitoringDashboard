@@ -40,7 +40,7 @@ namespace Forecasting
                     .Select(m => new ForecastInput
                     {
                         Timestamp = m.Timestamp,
-                        Value = m.CpuUsage,  // Use actual CPU usage data
+                        Value = m.CpuUsage,
                         ItemId = m.NodeName // Assuming NodeName is the identifier
                     })
                     .ToListAsync();
@@ -51,45 +51,52 @@ namespace Forecasting
                     .Select(m => new ForecastInput
                     {
                         Timestamp = m.Timestamp,
-                        Value = m.MemoryUsage,  // Use actual memory usage data
-                        ItemId = m.NodeName // Assuming NodeName is the identifier
+                        Value = m.MemoryUsage,
+                        ItemId = m.NodeName
                     })
                     .ToListAsync();
-
 
                 if (!pastCpuData.Any() || !pastMemoryData.Any())
                 {
                     _logger.LogWarning("Not enough historical data for forecasting.");
                     return;
                 }
-
-                // Aggregate data into 5-minute intervals
                 var averagedCpuData = AggregateDataIntoIntervals(pastCpuData, 5);
                 var averagedMemoryData = AggregateDataIntoIntervals(pastMemoryData, 5);
 
-                // Call the prediction API
-                var cpuForecast = await GetCPUForecastAsync("cpu", averagedCpuData);
-                var memoryForecast = await GetMemoryForecastAsync("memory", averagedMemoryData);
+                var cpuForecasts = await GetCPUForecastAsync("cpu", averagedCpuData);
+                var memoryForecasts = await GetMemoryForecastAsync("memory", averagedMemoryData);
 
-                if (cpuForecast != null)
+                _logger.LogInformation($"cpuForecasts: {JsonSerializer.Serialize(cpuForecasts)}");
+                _logger.LogInformation($"memoryForecasts: {JsonSerializer.Serialize(memoryForecasts)}");
+
+                if (cpuForecasts != null && cpuForecasts.Any())
                 {
-                    _dbContext.CpuForecasts.Add(cpuForecast);
-                    _logger.LogInformation($"Stored CPU forecast for {cpuForecast.Timestamp}.");
+                    _dbContext.CpuForecasts.AddRange(cpuForecasts); 
+                }
+                else
+                {
+                    _logger.LogWarning("CPU forecast API returned no results.");
                 }
 
-                if (memoryForecast != null)
+                if (memoryForecasts != null && memoryForecasts.Any())
                 {
-                    _dbContext.MemoryForecasts.Add(memoryForecast);
-                    _logger.LogInformation($"Stored Memory forecast for {memoryForecast.Timestamp}.");
+                    _dbContext.MemoryForecasts.AddRange(memoryForecasts);
+                }
+                else
+                {
+                    _logger.LogWarning("Memory forecast API returned no results.");
                 }
 
                 await _dbContext.SaveChangesAsync();
+                _logger.LogInformation("Forecasting results saved successfully.");
             }
             catch (Exception ex)
             {
                 _logger.LogError($"Error in forecasting: {ex.Message}");
             }
         }
+
 
         private List<ForecastInput> AggregateDataIntoIntervals(List<ForecastInput> rawData, int intervalMinutes)
         {
@@ -117,8 +124,7 @@ namespace Forecasting
                         {
                             Timestamp = currentTime,
                             Value = windowData.Average(d => d.Value),
-                            // ItemId = windowData.First().ItemId
-                            ItemId = "Node1"
+                            ItemId = windowData.First().ItemId
                         });
                     }
 
@@ -129,82 +135,104 @@ namespace Forecasting
             return aggregatedData;
         }
 
-        private async Task<CpuForecast> GetCPUForecastAsync(string type, List<ForecastInput> inputData)
+        private async Task<List<CpuForecast>> GetCPUForecastAsync(string type, List<ForecastInput> inputData)
         {
             try
             {
                 string apiUrl = $"{_predictionApiUrl}/predict"; 
 
-                var requestContent = new StringContent(JsonSerializer.Serialize(inputData), Encoding.UTF8, "application/json");
-                _logger.LogInformation($"Sending forecast request with data: {JsonSerializer.Serialize(inputData)}");
+                List<ForecastInput> updatedInputData = inputData
+                    .Select(item => new ForecastInput
+                    {
+                        Timestamp = item.Timestamp,
+                        Value = item.Value,
+                        ItemId = item.ItemId + "_cpu"
+                    })
+                    .ToList();
+
+                var requestContent = new StringContent(JsonSerializer.Serialize(updatedInputData), Encoding.UTF8, "application/json");
+                // _logger.LogInformation($"Sending forecast request with data: {JsonSerializer.Serialize(inputData)}");
+
                 var response = await _httpClient.PostAsync(apiUrl, requestContent);
 
                 if (!response.IsSuccessStatusCode)
                 {
                     _logger.LogError($"Forecast API error: {response.StatusCode}");
-                    return null;
+                    return new List<CpuForecast>();
+                }
+                var forecastResults = await response.Content.ReadFromJsonAsync<List<ForecastResponse>>();
+
+                if (forecastResults == null || !forecastResults.Any())
+                {
+                    _logger.LogError("Forecast API returned null or empty response.");
+                    return new List<CpuForecast>(); 
                 }
 
-                var forecastResult = await response.Content.ReadFromJsonAsync<ForecastResponse>();
-
-                if (forecastResult == null)
+                var cpuForecasts = forecastResults.Select(forecast => new CpuForecast
                 {
-                    _logger.LogError("Forecast API returned null response.");
-                    return null;
-                }
+                    ItemId = forecast.ItemId,
+                    Timestamp = forecast.Timestamp,
+                    mean = forecast.mean, 
+                    lowerBound = forecast.lowerBound,
+                    upperBound = forecast.upperBound
+                }).ToList();
 
-                return new CpuForecast
-                {
-                    ItemId = inputData.First().ItemId,
-                    Timestamp = forecastResult.Timestamp,
-                    Mean = forecastResult.Mean,
-                    Percentile10 = forecastResult.Percentile10,
-                    Percentile90 = forecastResult.Percentile90
-                };
+                return cpuForecasts;
             }
             catch (Exception ex)
             {
                 _logger.LogError($"Error calling forecast API: {ex.Message}");
-                return null;
+                return new List<CpuForecast>();
             }
         }
 
-        private async Task<MemoryForecast> GetMemoryForecastAsync(string type, List<ForecastInput> inputData)
+
+        private async Task<List<MemoryForecast>> GetMemoryForecastAsync(string type, List<ForecastInput> inputData)
         {
             try
             {
                 string apiUrl = $"{_predictionApiUrl}/predict"; 
 
-                var requestContent = new StringContent(JsonSerializer.Serialize(inputData), Encoding.UTF8, "application/json");
+                List<ForecastInput> updatedInputData = inputData
+                    .Select(item => new ForecastInput
+                    {
+                        Timestamp = item.Timestamp,
+                        Value = item.Value,
+                        ItemId = item.ItemId + "_memory"
+                    })
+                    .ToList();
+
+                var requestContent = new StringContent(JsonSerializer.Serialize(updatedInputData), Encoding.UTF8, "application/json");
                 var response = await _httpClient.PostAsync(apiUrl, requestContent);
 
                 if (!response.IsSuccessStatusCode)
                 {
                     _logger.LogError($"Forecast API error: {response.StatusCode}");
-                    return null;
+                    return new List<MemoryForecast>();
+                }
+                var forecastResults = await response.Content.ReadFromJsonAsync<List<ForecastResponse>>();
+
+                if (forecastResults == null || !forecastResults.Any())
+                {
+                    _logger.LogError("Forecast API returned null or empty response.");
+                    return new List<MemoryForecast>();
                 }
 
-                var forecastResult = await response.Content.ReadFromJsonAsync<ForecastResponse>();
-
-                if (forecastResult == null)
+                var memoryForecasts = forecastResults.Select(forecast => new MemoryForecast
                 {
-                    _logger.LogError("Forecast API returned null response.");
-                    return null;
-                }
+                    ItemId = forecast.ItemId,
+                    Timestamp = forecast.Timestamp,
+                    mean = forecast.mean, 
+                    lowerBound = forecast.lowerBound,
+                    upperBound = forecast.upperBound
+                }).ToList();
 
-                return new MemoryForecast
-                {
-                    ItemId = inputData.First().ItemId,
-                    Timestamp = forecastResult.Timestamp,
-                    Mean = forecastResult.Mean,
-                    Percentile10 = forecastResult.Percentile10,
-                    Percentile90 = forecastResult.Percentile90
-                };
+                return memoryForecasts;
             }
             catch (Exception ex)
             {
                 _logger.LogError($"Error calling forecast API: {ex.Message}");
-                return null;
+                return new List<MemoryForecast>();
             }
         }
     }

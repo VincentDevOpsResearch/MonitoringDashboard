@@ -1,5 +1,6 @@
 using System;
 using System.ComponentModel.DataAnnotations.Schema;
+using System.Text.Json.Serialization;
 
 namespace Forecasting
 {
@@ -26,15 +27,15 @@ namespace Forecasting
         public DateTime Timestamp { get; set; }
         
         [Column("mean")]
-        public float Mean { get; set; }
+        public float mean { get; set; }
         [Column("lower_bound")]
-        public float Percentile10 { get; set; }
+        public float lowerBound { get; set; }
         
         [Column("upper_bound")]
-        public float Percentile90 { get; set; }
+        public float upperBound { get; set; }
 
         [Column("created_at")]
-        public DateTime CreatedAt { get; set; }
+        public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
     }
 
     // Model for Memory Forecast
@@ -48,14 +49,14 @@ namespace Forecasting
         public DateTime Timestamp { get; set; }
         
         [Column("mean")]
-        public float Mean { get; set; }
+        public float mean { get; set; }
         [Column("lower_bound")]
-        public float Percentile10 { get; set; }
+        public float lowerBound { get; set; }
         
         [Column("upper_bound")]
-        public float Percentile90 { get; set; }
+        public float upperBound { get; set; }
         [Column("created_at")]
-        public DateTime CreatedAt { get; set; }
+        public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
     }
 
     public class ClusterMetric
@@ -73,17 +74,28 @@ namespace Forecasting
     // Model for Forecast Input Data
     public class ForecastInput
     {
+        [JsonPropertyName("timestamp")]
         public DateTime Timestamp { get; set; }
         public double Value { get; set; }
+        
+        [JsonPropertyName("item_id")]
         public string ItemId { get; set; }
     }
 
     // Model for Forecast API Response
     public class ForecastResponse
     {
+        [JsonPropertyName("item_id")]
+        public string ItemId { get; set; }
+
+        [JsonPropertyName("timestamp")]
         public DateTime Timestamp { get; set; }
-        public float Mean { get; set; }
-        public float Percentile10 { get; set; }
-        public float Percentile90 { get; set; }
+
+        [JsonPropertyName("prediction")]
+        public float mean { get; set; }
+
+        public float lowerBound { get; set; }
+
+        public float upperBound { get; set; }
     }
 }

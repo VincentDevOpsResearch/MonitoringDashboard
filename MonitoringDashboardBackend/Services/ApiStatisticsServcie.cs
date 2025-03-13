@@ -286,14 +286,14 @@ namespace MonitoringDashboard.Services
                 double threshold = totalBucketCount * 0.9;
 
                 double cumulativeCount = 0;
-                double percentile90ResponseTime = 0;
+                double upperBoundResponseTime = 0;
 
                 foreach (var bucket in buckets)
                 {
                     cumulativeCount += bucket.Value;
                     if (cumulativeCount >= threshold)
                     {
-                        percentile90ResponseTime = bucket.Le == "+Inf" ? maxResponseTime : double.Parse(bucket.Le);
+                        upperBoundResponseTime = bucket.Le == "+Inf" ? maxResponseTime : double.Parse(bucket.Le);
                         break;
                     }
                 }
@@ -306,7 +306,7 @@ namespace MonitoringDashboard.Services
                     AvgResponseTime = avgResponseTime,
                     MinResponseTime = minResponseTime,
                     MaxResponseTime = maxResponseTime,
-                    Percentile90ResponseTime = percentile90ResponseTime,
+                    upperBoundResponseTime = upperBoundResponseTime,
                     ErrorRate = errorRate
                 });
             }
