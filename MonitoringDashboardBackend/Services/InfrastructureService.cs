@@ -329,9 +329,6 @@ namespace MonitoringDashboard.Services
                     CpuUsage = 0,
                     DiskUsage = 0,
                     RamUsage = 0,
-                    CpuStatus = 0,
-                    MemoryStatus = 0,
-                    DiskStatus = 0
                 };
             }
 
@@ -341,11 +338,6 @@ namespace MonitoringDashboard.Services
                 CpuUsage = (int)Math.Round(latestClusterMetric.CpuUsage), // Convert CPU usage to percentage
                 DiskUsage = (int)Math.Round(latestClusterMetric.DiskUsage ?? 0), // Disk usage might be null
                 RamUsage = (int)Math.Round(latestClusterMetric.MemoryUsage), // Memory usage as integer
-
-                // Set status based on thresholds
-                CpuStatus = latestClusterMetric.CpuUsage * 100 > 60 ? 1 : 0,
-                MemoryStatus = latestClusterMetric.MemoryUsage > 80 ? 1 : 0,
-                DiskStatus = (latestClusterMetric.DiskUsage ?? 0) > 80 ? 1 : 0
             };
 
             return clusterUtilization;

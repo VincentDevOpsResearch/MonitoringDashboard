@@ -9,11 +9,11 @@
   },
   "TotalPods": {
     "Threshold": 15,
-    "Mode": 0
+    "Mode": 1
   },
   "RunningPods": {
     "Threshold": 11,
-    "Mode": 0
+    "Mode": 1
   },
   "RequestsLast24Hours": {
     "Threshold": 1000,
@@ -37,6 +37,18 @@
   },
   "ErrorRateThisHour": {
     "Threshold": 5,
+    "Mode": 0
+  },
+  "CpuUtilization": {
+    "Threshold": 80,
+    "Mode": 0
+  },
+  "MemoryUtilization": {
+    "Threshold": 75,
+    "Mode": 0
+  },
+  "DiskUtilization": {
+    "Threshold": 85,
     "Mode": 0
   }
 }

@@ -14,15 +14,16 @@ public class AlertConfigService
 
     public Dictionary<string, AlertThreshold> GetThresholds() => _thresholds;
 
-    public void UpdateThreshold(string category, double threshold)
+    public bool UpdateThreshold(string category, double threshold)
     {
         if (!_thresholds.ContainsKey(category))
         {
-            _thresholds[category] = new AlertThreshold();
+            return false; // Category not found, return failure
         }
 
         _thresholds[category].Threshold = threshold;
         SaveConfig();
+        return true; // Successfully updated
     }
 
     private void LoadConfig()

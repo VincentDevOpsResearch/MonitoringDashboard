@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using MonitoringDashboard.Models;
 
 [ApiController]
-[Route("api/alert-thresholds")]
+[Route("alert-thresholds")]
 public class AlertController : ControllerBase
 {
     private readonly AlertConfigService _configService;
@@ -23,7 +23,14 @@ public class AlertController : ControllerBase
     [HttpPost("update")]
     public IActionResult UpdateThreshold([FromBody] AlertUpdateRequest request)
     {
-        _configService.UpdateThreshold(request.Category, request.Threshold);
+        bool success = _configService.UpdateThreshold(request.Category, request.Threshold);
+
+        if (!success)
+        {
+            return BadRequest(new { message = $"Threshold category '{request.Category}' not found." });
+        }
+
         return Ok(new { message = "Threshold updated successfully" });
     }
+
 }

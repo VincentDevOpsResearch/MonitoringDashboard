@@ -60,9 +60,6 @@ namespace MonitoringDashboard.Models
         public int CpuUsage { get; set; }
         public int DiskUsage { get; set; }
         public int RamUsage { get; set; }
-        public int CpuStatus { get; set; } // 0 or 1 based on usage threshold
-        public int MemoryStatus { get; set; }
-        public int DiskStatus { get; set; }
     }
 
     /// <summary>
