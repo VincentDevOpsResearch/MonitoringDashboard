@@ -32,10 +32,13 @@ namespace Forecasting
 
             try
             {
-                var timeThreshold = DateTime.UtcNow.AddMinutes(-60); // Retrieve last 60 minutes of data
+                DateTime latestTimestamp = RoundDownToNearestMinutes(DateTime.UtcNow, 5); // Round to nearest 5 minutes
+                DateTime timeThreshold = latestTimestamp.AddMinutes(-60); // Use last 60 minutes
+
+                _logger.LogInformation($"latestTimeStamp: {JsonSerializer.Serialize(latestTimestamp)}");
 
                 var pastCpuData = await _dbContext.NodeMetrics
-                    .Where(m => m.Timestamp >= timeThreshold)
+                    .Where(m => m.Timestamp >= timeThreshold && m.Timestamp <= latestTimestamp)
                     .OrderBy(m => m.Timestamp)
                     .Select(m => new ForecastInput
                     {
@@ -46,7 +49,7 @@ namespace Forecasting
                     .ToListAsync();
 
                 var pastMemoryData = await _dbContext.NodeMetrics
-                    .Where(m => m.Timestamp >= timeThreshold)
+                    .Where(m => m.Timestamp >= timeThreshold && m.Timestamp <= latestTimestamp)
                     .OrderBy(m => m.Timestamp)
                     .Select(m => new ForecastInput
                     {
@@ -61,8 +64,11 @@ namespace Forecasting
                     _logger.LogWarning("Not enough historical data for forecasting.");
                     return;
                 }
-                var averagedCpuData = AggregateDataIntoIntervals(pastCpuData, 5);
-                var averagedMemoryData = AggregateDataIntoIntervals(pastMemoryData, 5);
+                var averagedCpuData = AggregateDataIntoIntervals(pastCpuData, timeThreshold, 5);
+                var averagedMemoryData = AggregateDataIntoIntervals(pastMemoryData, timeThreshold, 5);
+
+                _logger.LogInformation($"AggregatedCPU: {JsonSerializer.Serialize(averagedCpuData)}");
+                _logger.LogInformation($"AggregatedMemory: {JsonSerializer.Serialize(averagedMemoryData)}");
 
                 var cpuForecasts = await GetCPUForecastAsync("cpu", averagedCpuData);
                 var memoryForecasts = await GetMemoryForecastAsync("memory", averagedMemoryData);
@@ -97,34 +103,32 @@ namespace Forecasting
             }
         }
 
-
-        private List<ForecastInput> AggregateDataIntoIntervals(List<ForecastInput> rawData, int intervalMinutes)
+        public List<ForecastInput> AggregateDataIntoIntervals(List<ForecastInput> rawData, DateTime startTime, int intervalMinutes = 5)
         {
-            if (!rawData.Any()) return new List<ForecastInput>();
+            if (!rawData.Any())
+                return new List<ForecastInput>();
 
             List<ForecastInput> aggregatedData = new List<ForecastInput>();
 
-            DateTime startTime = rawData.Min(d => d.Timestamp);
-            DateTime endTime = rawData.Max(d => d.Timestamp);
-            DateTime currentTime = startTime;
+            DateTime endTime = startTime.AddMinutes(60); 
 
-            var groupedData = rawData.GroupBy( d => d.ItemId);
+            var groupedData = rawData.GroupBy(d => d.ItemId);
 
             foreach (var group in groupedData)
             {
-                while (currentTime <= endTime)
+                DateTime currentTime = startTime;
+
+                while (currentTime < endTime)
                 {
-                    var windowData = rawData
-                        .Where(d => d.Timestamp >= currentTime && d.Timestamp < currentTime.AddMinutes(intervalMinutes))
-                        .ToList();
+                    var windowData = group.Where(d => d.Timestamp >= currentTime && d.Timestamp < currentTime.AddMinutes(intervalMinutes)).ToList();
 
                     if (windowData.Any())
                     {
                         aggregatedData.Add(new ForecastInput
                         {
-                            Timestamp = currentTime,
-                            Value = windowData.Average(d => d.Value),
-                            ItemId = windowData.First().ItemId
+                            Timestamp = currentTime.AddMinutes(intervalMinutes), 
+                            Value = (int)Math.Round(windowData.Average(d => d.Value)),
+                            ItemId = group.Key
                         });
                     }
 
@@ -132,8 +136,15 @@ namespace Forecasting
                 }
             }
 
-            return aggregatedData;
+            return aggregatedData.OrderBy(d => d.Timestamp).ToList();
         }
+        DateTime RoundDownToNearestMinutes(DateTime dt, int intervalMinutes)
+        {
+            var totalMinutes = (dt.Hour * 60) + dt.Minute;
+            var roundedMinutes = (totalMinutes / intervalMinutes) * intervalMinutes;
+            return new DateTime(dt.Year, dt.Month, dt.Day, roundedMinutes / 60, roundedMinutes % 60, 0);
+        }
+
 
         private async Task<List<CpuForecast>> GetCPUForecastAsync(string type, List<ForecastInput> inputData)
         {

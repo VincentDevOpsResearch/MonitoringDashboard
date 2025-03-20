@@ -56,7 +56,7 @@ const ClusterPerformance: React.FC = () => {
     };
 
     fetchClusterMetrics();
-    const interval = setInterval(fetchClusterMetrics, 300000); // Refresh every 5 minutes
+    const interval = setInterval(fetchClusterMetrics, 60000); // Refresh every 5 minutes
 
     return () => clearInterval(interval);
   }, []);

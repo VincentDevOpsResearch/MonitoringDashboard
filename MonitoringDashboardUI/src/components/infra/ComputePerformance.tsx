@@ -66,7 +66,7 @@ const ComputePerformance: React.FC = () => {
   }, []);
 
   useEffect(() => {
-    const fetchCpuData = async () => {
+    const loadData = async () => {
       if (!selectedNode) return;
   
       try {
@@ -100,7 +100,12 @@ const ComputePerformance: React.FC = () => {
       }
     };
   
-    fetchCpuData();
+    loadData();
+
+    //Automatically refresh data every minute
+    const interval = setInterval(loadData, 60000)
+    // Clear Interval on unmount
+    return () => clearInterval(interval);
   }, [selectedNode]);
   
   

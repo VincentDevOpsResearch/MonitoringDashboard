@@ -11,6 +11,10 @@ node_modules/
 # Environment variables
 .env
 
+# Helm charts
+*.tgz
+
+
 # Build output
 build/
 dist/

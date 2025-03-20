@@ -63,6 +63,8 @@ namespace MonitoringDashboard.Controllers
             return Ok(clusterStatus);
         }
 
+        
+
         // Get Cluster utlization
         [HttpGet("cluster/utilization")]
         public async Task<IActionResult> GetClusterUtilization()

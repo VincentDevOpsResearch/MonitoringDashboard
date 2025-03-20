@@ -43,7 +43,6 @@ namespace Forecasting
     {
         public int Id { get; set; }
         
-        
         [Column("item_id")]
         public string ItemId { get; set; }
         public DateTime Timestamp { get; set; }
@@ -68,8 +67,6 @@ namespace Forecasting
         public double MemoryUsage { get; set; }
         public double DiskUsage { get; set; }
     }
-
-
 
     // Model for Forecast Input Data
     public class ForecastInput

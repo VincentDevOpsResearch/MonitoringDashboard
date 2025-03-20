@@ -151,7 +151,7 @@ namespace MonitoringDashboard.Services
                 var lastTime = lastTwoForecasts[1].Timestamp;
                 var oneHourBefore = lastTime.AddHours(-1);
 
-               _logger.LogInformation("Forecast alignment for {InstanceName}: lastTime = {LastTime}, oneHourBefore = {OneHourBefore}", 
+               _logger.LogInformation("CPU Forecast alignment for {InstanceName}: lastTime = {LastTime}, oneHourBefore = {OneHourBefore}", 
             instanceName, lastTime, oneHourBefore);
 
             // Fetch actual CPU usage within this 1-hour window
@@ -173,7 +173,7 @@ namespace MonitoringDashboard.Services
                 .GroupBy(g => g.RoundedTimestamp)
                 .Select(g => new CpuData
                 {
-                    Timestamp = g.Key,  // Use the rounded 5-minute timestamp
+                    Timestamp = g.Key.AddMinutes(5),  // Use the rounded 5-minute timestamp
                     Value = g.Average(d => d.CpuUsage)  // Compute average CPU usage
                 })
                 .OrderBy(d => d.Timestamp) // Ensure final data is ordered by time
@@ -209,7 +209,7 @@ namespace MonitoringDashboard.Services
                 var lastTime = lastTwoForecasts[1].Timestamp;
                 var oneHourBefore = lastTime.AddHours(-1);
 
-               _logger.LogInformation("Forecast alignment for {InstanceName}: lastTime = {LastTime}, oneHourBefore = {OneHourBefore}", 
+               _logger.LogInformation("Memory Forecast alignment for {InstanceName}: lastTime = {LastTime}, oneHourBefore = {OneHourBefore}", 
             instanceName, lastTime, oneHourBefore);
 
             // Fetch actual CPU usage within this 1-hour window
@@ -231,7 +231,7 @@ namespace MonitoringDashboard.Services
                 .GroupBy(g => g.RoundedTimestamp)
                 .Select(g => new MemoryData
                 {
-                    Timestamp = g.Key,  // Use the rounded 5-minute timestamp
+                    Timestamp = g.Key.AddMinutes(5),  // Use the rounded 5-minute timestamp
                     Value = g.Average(d => d.MemoryUsage)  // Compute average CPU usage
                 })
                 .OrderBy(d => d.Timestamp) // Ensure final data is ordered by time
@@ -239,8 +239,6 @@ namespace MonitoringDashboard.Services
 
             return groupedData;
         }
-
-
         public async Task<List<CpuForecastData>> GetCpuForecastForInstance(string instanceName)
         {
             // Fetch the latest 13 forecast records for the given instance

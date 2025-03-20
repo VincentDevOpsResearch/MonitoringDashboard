@@ -13,7 +13,7 @@ RUN npm install --force
 COPY . .
 
 # Set environment variable for React app
-ARG VITE_API_BASE_URL=http://monitoring.example.com:30080
+ARG VITE_API_BASE_URL=http://monitoring.vincentjin98.com
 ENV VITE_API_BASE_URL=$VITE_API_BASE_URL
 
 # Build the application for production

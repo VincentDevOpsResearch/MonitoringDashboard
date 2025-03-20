@@ -113,6 +113,11 @@ const MetricsChartSection: React.FC<MetricsChartSectionProps> = ({
     };
 
     loadData();
+
+    //Automatically refresh data every minute
+    const interval = setInterval(loadData, 60000)
+    // Clear Interval on unmount
+    return () => clearInterval(interval);
   }, [selectedMetric, timeWindow, step]);
 
   return (

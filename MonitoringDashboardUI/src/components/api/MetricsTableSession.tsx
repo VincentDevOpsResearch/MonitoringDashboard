@@ -50,6 +50,11 @@ const MetricsTableSection: React.FC = () => {
     };
 
     fetchMetrics();
+
+    //Automatically refresh data every minute
+    const interval = setInterval(fetchMetrics, 60000)
+    // Clear Interval on unmount
+    return () => clearInterval(interval);
   }, []);
 
   if (loading) {

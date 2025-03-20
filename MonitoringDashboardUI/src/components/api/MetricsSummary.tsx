@@ -69,6 +69,11 @@ const MetricsSummary: React.FC = () => {
     };
 
     loadMetrics();
+
+    //Automatically refresh data every minute
+    const interval = setInterval(loadMetrics, 60000)
+    // Clear Interval on unmount
+    return () => clearInterval(interval);
   }, []);
 
   if (loading) {

@@ -42,7 +42,7 @@ const PerformanceChart: React.FC<PerformanceChartProps> = ({ nodeName }) => {
   const [timeLabels, setTimeLabels] = useState<string[]>([]);
 
   useEffect(() => {
-    const fetchPerformanceData = async () => {
+    const loadData = async () => {
       if (!nodeName) return;
 
       try {
@@ -98,7 +98,13 @@ const PerformanceChart: React.FC<PerformanceChartProps> = ({ nodeName }) => {
       }
     };
 
-    fetchPerformanceData();
+    loadData();
+
+    //Automatically refresh data every minute
+    const interval = setInterval(loadData, 60000)
+    // Clear Interval on unmount
+    return () => clearInterval(interval);
+    
   }, [nodeName, selectedMetric]);
 
   const chartData = {
