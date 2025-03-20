@@ -1,9 +1,9 @@
 import React, { useEffect, useState } from "react";
 import MetricCard from "../MetricCard";
 import UtilizationChart from "./UtilizationChart";
-import { Box, Typography, Paper } from "@mui/material";
-import { fetchData } from '../../api/requests';
-import { CLUSTER_STATUS, CLUSTER_UTILIZATION } from '../../api/constants'
+import { Box, Typography, Paper, CircularProgress } from "@mui/material";
+import { fetchData } from "../../api/requests";
+import { CLUSTER_STATUS, CLUSTER_UTILIZATION, THRESHOLDS } from "../../api/constants";
 
 interface PerformanceData {
   cpuUsage: number;
@@ -21,71 +21,61 @@ interface ClusterMetrics {
   runningPods: number;
 }
 
+interface Thresholds {
+  TotalNodes: { threshold: number; mode: number };
+  ActiveNodes: { threshold: number; mode: number };
+  TotalPods: { threshold: number; mode: number };
+  RunningPods: { threshold: number; mode: number };
+  CpuUtilization: { threshold: number; mode: number };
+  MemoryUtilization: { threshold: number; mode: number };
+  DiskUtilization: { threshold: number; mode: number };
+}
+
 const ClusterPerformance: React.FC = () => {
-  const [clusterMetrics, setClusterMetrics] = useState({
-    totalNodes: 0,
-    activeNodes: 0,
-    totalPods: 0,
-    runningPods: 0,
-  });
+  const [clusterMetrics, setClusterMetrics] = useState<ClusterMetrics | null>(null);
+  const [performanceData, setPerformanceData] = useState<PerformanceData | null>(null);
+  const [thresholds, setThresholds] = useState<Thresholds | null>(null);
+  const [loading, setLoading] = useState(true);
 
-  const [performanceData, setPerformanceData] = useState({
-    cpuUsage: 0,
-    diskUsage: 0,
-    ramUsage: 0,
-    cpuStatus: 0,
-    diskStatus: 0,
-    memoryStatus: 0
-  });
-
-  // Fetch cluster status data
   useEffect(() => {
-    const fetchClusterMetrics = async () => {
+    const fetchAllData = async () => {
       try {
-        const data = await fetchData<ClusterMetrics>({ path: CLUSTER_STATUS });
+        const [metricsData, utilizationData, thresholdsData] = await Promise.all([
+          fetchData<ClusterMetrics>({ path: CLUSTER_STATUS }),
+          fetchData<PerformanceData>({ path: CLUSTER_UTILIZATION }),
+          fetchData<Thresholds>({ path: THRESHOLDS }),
+        ]);
 
-        setClusterMetrics({
-          totalNodes: data.totalNodes,
-          activeNodes: data.activeNodes,
-          totalPods: data.totalPods,
-          runningPods: data.runningPods,
-        });
+        setClusterMetrics(metricsData);
+        setPerformanceData(utilizationData);
+        setThresholds(thresholdsData);
       } catch (error) {
-        console.error("Error fetching cluster status:", error);
+        console.error("Error fetching cluster data:", error);
+      } finally {
+        setLoading(false);
       }
     };
 
-    fetchClusterMetrics();
-    const interval = setInterval(fetchClusterMetrics, 60000); // Refresh every 5 minutes
-
+    fetchAllData();
+    const interval = setInterval(fetchAllData, 60000);
     return () => clearInterval(interval);
   }, []);
 
-  // Fetch cluster utilization data
-  useEffect(() => {
-    const fetchPerformanceData = async () => {
-      try {
+  if (loading) {
+    return (
+      <Box display="flex" justifyContent="center" alignItems="center" minHeight="50vh">
+        <CircularProgress />
+      </Box>
+    );
+  }
 
-        const data = await fetchData<PerformanceData>({ path: CLUSTER_UTILIZATION });
-
-        setPerformanceData({
-          cpuUsage: data.cpuUsage,
-          diskUsage: data.diskUsage,
-          ramUsage: data.ramUsage,
-          cpuStatus: data.cpuStatus,
-          memoryStatus: data.memoryStatus,
-          diskStatus: data.diskStatus,
-        });
-      } catch (error) {
-        console.error('Error fetching utilization data:', error);
-      }
-    };
-
-    fetchPerformanceData();
-    const interval = setInterval(fetchPerformanceData, 300000); // Refresh every 5 minutes
-
-    return () => clearInterval(interval);
-  }, []);
+  if (!clusterMetrics || !performanceData || !thresholds) {
+    return (
+      <Typography variant="h6" align="center" color="error">
+        Failed to load data. Please try again later.
+      </Typography>
+    );
+  }
 
   return (
     <div className="overall-cluster-performance">
@@ -93,19 +83,55 @@ const ClusterPerformance: React.FC = () => {
         Overall Cluster Performance
       </Typography>
       <div className="cluster-metrics">
-        <MetricCard title="Total Nodes" value={clusterMetrics.totalNodes} unit="" alertThreshold={10} />
-        <MetricCard title="Active Nodes" value={clusterMetrics.activeNodes} unit="" alertThreshold={5} />
-        <MetricCard title="Total Pods" value={clusterMetrics.totalPods} unit="" alertThreshold={5} />
-        <MetricCard title="Running Pods" value={clusterMetrics.runningPods} unit="" alertThreshold={5} />
+        <MetricCard
+          title="Total Nodes"
+          value={clusterMetrics.totalNodes}
+          alertThreshold={thresholds.TotalNodes.threshold}
+          alertMode={thresholds.TotalNodes.mode}
+          isAlertEnabled={true}
+        />
+        <MetricCard
+          title="Active Nodes"
+          value={clusterMetrics.activeNodes}
+          alertThreshold={thresholds.ActiveNodes.threshold}
+          alertMode={thresholds.ActiveNodes.mode}
+          isAlertEnabled={true}
+        />
+        <MetricCard
+          title="Total Pods"
+          value={clusterMetrics.totalPods}
+          alertThreshold={thresholds.TotalPods.threshold}
+          alertMode={thresholds.TotalPods.mode}
+          isAlertEnabled={true}
+        />
+        <MetricCard
+          title="Running Pods"
+          value={clusterMetrics.runningPods}
+          alertThreshold={thresholds.RunningPods.threshold}
+          alertMode={thresholds.RunningPods.mode}
+          isAlertEnabled={true}
+        />
       </div>
-      <Paper
-        elevation={3}
-        style={{borderRadius: "8px", position: "relative" }}
-      >
+      <Paper elevation={3} style={{ borderRadius: "8px", position: "relative" }}>
         <Box className="utilization-charts" display="flex" justifyContent="space-between" mb={2}>
-          <UtilizationChart title="CPU Utilization" value={performanceData.cpuUsage} status={performanceData.cpuStatus} />
-          <UtilizationChart title="Memory Utilization" value={performanceData.ramUsage} status={performanceData.memoryStatus} />
-          <UtilizationChart title="Disk Utilization" value={performanceData.diskUsage} status={performanceData.diskStatus} />
+          <UtilizationChart
+            title="CPU Utilization"
+            value={performanceData.cpuUsage}
+            alertThreshold={thresholds.CpuUtilization.threshold}
+            alertMode={thresholds.CpuUtilization.mode}
+          />
+          <UtilizationChart
+            title="Memory Utilization"
+            value={performanceData.ramUsage}
+            alertThreshold={thresholds.MemoryUtilization.threshold}
+            alertMode={thresholds.MemoryUtilization.mode}
+          />
+          <UtilizationChart
+            title="Disk Utilization"
+            value={performanceData.diskUsage}
+            alertThreshold={thresholds.DiskUtilization.threshold}
+            alertMode={thresholds.DiskUtilization.mode}
+          />
         </Box>
       </Paper>
     </div>

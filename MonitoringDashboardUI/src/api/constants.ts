@@ -1,3 +1,7 @@
+// ALERT
+export const THRESHOLDS = '/alert-thresholds';
+export const UPDATE_THRESHOLDS = '/alert-thresholds/update';
+
 // API
 export const REQUESTS = "/statistics/requests";
 export const ERROR_RATE = "/statistics/error-rate";
