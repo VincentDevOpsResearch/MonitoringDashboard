@@ -22,6 +22,9 @@ ENV DOTNET_USE_POLLING_FILE_WATCHER=true
 EXPOSE 7115
 EXPOSE 5292
 
+# Copy the config.json file into the container
+COPY config.json /app/config.json
+
 # Copy the published application from the build stage
 COPY --from=build-env /app/out .
 

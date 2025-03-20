@@ -1,15 +1,42 @@
 {
-    "TotalNodes": { "Threshold": 1, "Mode": 1 },
-    "ActiveNodes": { "Threshold": 1, "Mode": 1 },
-    "TotalPods": { "Threshold": 15, "Mode": 0 },
-    "RunningPods": { "Threshold": 10, "Mode": 0 },
-  
-    "RequestsLast24Hours": { "Threshold": 1000, "Mode": 0 },
-    "AvgResponseLast24Hours": { "Threshold": 1.0, "Mode": 0 },
-    "ErrorRateLast24Hours": { "Threshold": 5.0, "Mode": 0 },
-  
-    "RequestsThisHour": { "Threshold": 100, "Mode": 0 },
-    "AvgResponseThisHour": { "Threshold": 1.0, "Mode": 0 },
-    "ErrorRateThisHour": { "Threshold": 5.0, "Mode": 0 }
+  "TotalNodes": {
+    "Threshold": 1,
+    "Mode": 1
+  },
+  "ActiveNodes": {
+    "Threshold": 1,
+    "Mode": 1
+  },
+  "TotalPods": {
+    "Threshold": 15,
+    "Mode": 0
+  },
+  "RunningPods": {
+    "Threshold": 11,
+    "Mode": 0
+  },
+  "RequestsLast24Hours": {
+    "Threshold": 1000,
+    "Mode": 0
+  },
+  "AvgResponseLast24Hours": {
+    "Threshold": 1,
+    "Mode": 0
+  },
+  "ErrorRateLast24Hours": {
+    "Threshold": 5,
+    "Mode": 0
+  },
+  "RequestsThisHour": {
+    "Threshold": 100,
+    "Mode": 0
+  },
+  "AvgResponseThisHour": {
+    "Threshold": 1,
+    "Mode": 0
+  },
+  "ErrorRateThisHour": {
+    "Threshold": 5,
+    "Mode": 0
   }
-  
+}

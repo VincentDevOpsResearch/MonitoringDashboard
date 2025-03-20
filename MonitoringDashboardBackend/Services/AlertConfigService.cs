@@ -14,7 +14,7 @@ public class AlertConfigService
 
     public Dictionary<string, AlertThreshold> GetThresholds() => _thresholds;
 
-    public void UpdateThreshold(string category, double threshold, int mode)
+    public void UpdateThreshold(string category, double threshold)
     {
         if (!_thresholds.ContainsKey(category))
         {
@@ -22,7 +22,6 @@ public class AlertConfigService
         }
 
         _thresholds[category].Threshold = threshold;
-        _thresholds[category].Mode = mode;
         SaveConfig();
     }
 

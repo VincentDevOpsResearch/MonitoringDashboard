@@ -23,7 +23,7 @@ public class AlertController : ControllerBase
     [HttpPost("update")]
     public IActionResult UpdateThreshold([FromBody] AlertUpdateRequest request)
     {
-        _configService.UpdateThreshold(request.Category, request.Threshold, request.Mode);
+        _configService.UpdateThreshold(request.Category, request.Threshold);
         return Ok(new { message = "Threshold updated successfully" });
     }
 }
